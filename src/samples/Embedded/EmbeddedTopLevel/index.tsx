@@ -1,9 +1,10 @@
 /* eslint-disable react/button-has-type */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { render } from "react-dom";
 import Typography from '@material-ui/core/Typography';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { createTheme, makeStyles, ThemeProvider } from '@material-ui/core/styles';
+import { useLocation } from 'react-router-dom';
 
 import StoreContext from "../../../bridge/Context/StoreContext";
 import createPConnectComponent from "../../../bridge/react_pconnect";
@@ -21,6 +22,13 @@ import { getSdkConfig } from '../../../helpers/config_access';
 
 declare const PCore: any;
 declare const myLoadMashup: any;
+declare const myUpdateLocale: any;
+
+function useQuery() {
+  const { search } = useLocation();
+
+  return useMemo(() => new URLSearchParams(search), [search]);
+}
 
 const useStyles = makeStyles((theme) => ({
   embedTopRibbon: {
@@ -165,6 +173,12 @@ export default function EmbeddedTopLevel() {
   const [bShowResolutionScreen, setShowResolutionScreen] = useState(false);
   const [bShowAppName, setShowAppName] = useState(false);
 
+  const query = useQuery();
+
+  const localeValue = query.get('locale');
+  if( localeValue ){
+    sessionStorage.setItem("rsdk_locale", localeValue);
+  }
 
   useEffect( () => {
     // Update visibility of UI when bShowTriplePlayOptions changes
@@ -379,6 +393,12 @@ export default function EmbeddedTopLevel() {
 
     // load the Mashup and handle the onPCoreEntry response that establishes the
     //  top level Pega root element (likely a RootContainer)
+
+    // Set the locale if provided as a query parameter
+    const localePortal = sessionStorage.getItem("rsdk_locale");
+    if( myUpdateLocale && localePortal ){
+       myUpdateLocale(localePortal);
+    }
 
     myLoadMashup("pega-root", false);   // this is defined in bootstrap shell that's been loaded already
   }

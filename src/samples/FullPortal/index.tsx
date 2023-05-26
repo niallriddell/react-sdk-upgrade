@@ -12,6 +12,7 @@ import { loginIfNecessary } from '../../helpers/authManager';
 declare const PCore: any;
 declare const myLoadPortal: any;
 declare const myLoadDefaultPortal: any;
+declare const myUpdateLocale: any;
 
 function useQuery() {
   const { search } = useLocation();
@@ -24,6 +25,11 @@ export default function FullPortal() {
   if (query.get('portal')) {
     const portalValue: any = query.get('portal');
     sessionStorage.setItem("rsdk_portalName", portalValue);
+  }
+
+  const localeValue = query.get('locale');
+  if( localeValue ){
+    sessionStorage.setItem("rsdk_locale", localeValue);
   }
 
   const theme = createTheme({
@@ -136,6 +142,12 @@ export default function FullPortal() {
 
     // load the Portal and handle the onPCoreEntry response that establishes the
     //  top level Pega root element (likely a RootContainer)
+
+    // Set the locale if provided as a query parameter
+    const localePortal = sessionStorage.getItem("rsdk_locale");
+    if( myUpdateLocale && localePortal ){
+       myUpdateLocale(localePortal);
+    }
 
     const thePortal = SdkConfigAccess.getSdkConfigServer().appPortal;
     const defaultPortal = PCore?.getEnvironmentInfo?.().getDefaultPortal?.();

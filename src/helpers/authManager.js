@@ -268,6 +268,7 @@ const constellationInit = (authConfig, tokenInfo, authTokenUpdated, fnReauth) =>
     window.myLoadMashup = bootstrapShell.loadMashup;
     window.myLoadPortal = bootstrapShell.loadPortal;
     window.myLoadDefaultPortal = bootstrapShell.loadDefaultPortal;
+    window.myUpdateLocale = bootstrapShell.updateLocale;
 
     bootstrapShell.bootstrapWithAuthHeader(constellationBootConfig, 'shell').then(() => {
       // eslint-disable-next-line no-console
@@ -377,12 +378,21 @@ const updateRedirectUri = (aMgr, sRedirectUri) => {
     try {
         authConfig = JSON.parse(sSI);
     } catch(e) {
-      // do nothing
+      console.log("sSI JSON didn't parse");
     }
   }
-  authConfig.redirectUri = sRedirectUri;
-  sessionStorage.setItem("rsdk_CI", JSON.stringify(authConfig));
-  aMgr.reloadConfig();
+  else{
+    console.log("No sSI value found.");
+  }
+  if(!authConfig){
+    console.log("authConfig is falsy");
+    debugger;
+  }
+  if(authConfig){
+    authConfig.redirectUri = sRedirectUri;
+    sessionStorage.setItem("rsdk_CI", JSON.stringify(authConfig));
+    aMgr.reloadConfig();
+  }
 };
 
 
@@ -432,6 +442,9 @@ export const login = (bFullReauth=false) => {
     // If initial main redirect is OK, redirect to main page, otherwise will authorize in a popup window
     if (bMainRedirect && !bFullReauth) {
       // update redirect uri to be the root
+      if(!aMgr){
+        console.log("bMainRedirect: aMgr is null");
+      }
       updateRedirectUri(aMgr, sRedirectUri);
       aMgr.loginRedirect();
       // Don't have token til after the redirect
@@ -441,6 +454,9 @@ export const login = (bFullReauth=false) => {
       const nLastPathSep = sRedirectUri.lastIndexOf("/");
       sRedirectUri = nLastPathSep !== -1 ? `${sRedirectUri.substring(0,nLastPathSep+1)}auth.html` : `${sRedirectUri}/auth.html`;
       // Set redirectUri to static auth.html
+      if(!aMgr){
+        console.log("aMgr is null");
+      }
       updateRedirectUri(aMgr, sRedirectUri);
       return new Promise( (resolve, reject) => {
         aMgr.login().then(token => {
@@ -465,6 +481,9 @@ export const authRedirectCallback = ( href, fnLoggedInCB=null ) => {
   const aHrefParts = href.split('?');
   const urlParams = new URLSearchParams(aHrefParts.length>1 ? `?${aHrefParts[1]}` : '');
   const code = urlParams.get("code");
+  if(!code){
+    console.log("authRedirectCallback: Didn't get code");
+  }
 
   getAuthMgr(false).then( (aMgr) => {
     aMgr.getToken(code).then(token => {
@@ -544,6 +563,7 @@ export const authTokenUpdated = (tokenInfo ) => {
 
 export const logout = () => {
   sessionStorage.removeItem('rsdk_portalName');
+  sessionStorage.removeItem('rsdk_locale');
   return new Promise((resolve) => {
     const fnClearAndResolve = () => {
       clearAuthMgr();
